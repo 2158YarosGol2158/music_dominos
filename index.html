@@ -57,16 +57,13 @@
         }
 
         .domino-chain {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             gap: 3px;
-            max-width: calc(100% - 40px);
+            max-width: 100%;
+            padding: 20px;
         }
 
         .domino {
@@ -169,7 +166,7 @@
             border: 1px solid rgba(255,255,255,0.5);
         }
 
-        .draw-button-container {
+        .draw-section {
             background: rgba(255,255,255,0.1);
             padding: 15px;
             border-radius: 10px;
@@ -215,7 +212,7 @@
         }
 
         .drop-zone {
-            min-width: 50px;
+            min-width: 80px;
             min-height: 50px;
             border: 2px dashed rgba(255,255,255,0.5);
             border-radius: 8px;
@@ -226,6 +223,19 @@
             font-size: 12px;
             margin: 5px;
             transition: all 0.3s ease;
+            position: absolute;
+        }
+
+        .drop-zone[data-position="start"] {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .drop-zone[data-position="end"] {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .drop-zone.drag-over {
@@ -299,7 +309,7 @@
             <div id="stockDominoes"></div>
         </div>
 
-        <div class="draw-button-container">
+        <div class="draw-section">
             <button onclick="drawFromStock()" id="drawButton" disabled>Взяти доміно</button>
         </div>
 
@@ -438,63 +448,10 @@
                 document.querySelector('[data-position="end"]').style.display = 'flex';
                 document.querySelector('[data-position="end"]').textContent = '→';
                 
-                // Визначаємо напрямок ланцюжка
-                let direction = 'horizontal'; // початковий напрямок
-                let x = 0, y = 0;
-                const dominoWidth = 80;
-                const dominoHeight = 40;
-                const spacing = 10;
-                
-                // Розміщуємо перше доміно
-                if (gameState.board.length > 0) {
-                    const firstDomino = gameState.board[0];
-                    const firstDominoEl = renderDomino(firstDomino);
-                    firstDominoEl.style.position = 'absolute';
-                    firstDominoEl.style.left = `${x}px`;
-                    firstDominoEl.style.top = `${y}px`;
-                    chainEl.appendChild(firstDominoEl);
-                    
-                    // Оновлюємо позицію для наступного доміно
-                    x += dominoWidth + spacing;
-                }
-                
-                // Розміщуємо решту доміно
-                for (let i = 1; i < gameState.board.length; i++) {
-                    const domino = gameState.board[i];
+                gameState.board.forEach((domino, index) => {
                     const dominoEl = renderDomino(domino);
-                    
-                    // Автоматично визначаємо орієнтацію доміно
-                    const shouldBeVertical = (i % 4 === 1 || i % 4 === 3); // Кожне друге і четверте доміно вертикальне
-                    
-                    if (shouldBeVertical) {
-                        domino.isVertical = true;
-                        dominoEl.className = 'domino vertical';
-                    } else {
-                        domino.isVertical = false;
-                        dominoEl.className = 'domino';
-                    }
-                    
-                    dominoEl.style.position = 'absolute';
-                    
-                    if (shouldBeVertical) {
-                        dominoEl.style.left = `${x}px`;
-                        dominoEl.style.top = `${y}px`;
-                        y += dominoHeight + spacing;
-                    } else {
-                        dominoEl.style.left = `${x}px`;
-                        dominoEl.style.top = `${y}px`;
-                        x += dominoWidth + spacing;
-                    }
-                    
-                    // Змінюємо напрямок після кожних 4 доміно
-                    if (i % 4 === 0) {
-                        const temp = x;
-                        x = y;
-                        y = temp;
-                    }
-                    
                     chainEl.appendChild(dominoEl);
-                }
+                });
             }
 
             setupDropZones();
@@ -552,15 +509,6 @@
             }
 
             const adjustedDomino = adjustDominoForPlacement(gameState.draggedDomino, position);
-            
-            // Автоматично визначаємо орієнтацію для нового доміно
-            if (gameState.board.length > 0) {
-                if (position === 'start') {
-                    adjustedDomino.isVertical = gameState.board[0].isVertical;
-                } else {
-                    adjustedDomino.isVertical = gameState.board[gameState.board.length - 1].isVertical;
-                }
-            }
             
             if (position === 'start') {
                 gameState.board.unshift(adjustedDomino);
@@ -703,15 +651,6 @@
             const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
             const adjustedDomino = adjustDominoForPlacement(move.domino, move.position);
             
-            // Автоматично визначаємо орієнтацію для доміно комп'ютера
-            if (gameState.board.length > 0) {
-                if (move.position === 'start') {
-                    adjustedDomino.isVertical = gameState.board[0].isVertical;
-                } else {
-                    adjustedDomino.isVertical = gameState.board[gameState.board.length - 1].isVertical;
-                }
-            }
-            
             if (move.position === 'start') {
                 gameState.board.unshift(adjustedDomino);
             } else {
@@ -782,8 +721,7 @@
 Кнопка "Взяти доміно" стає активною тільки коли немає ходів
 Можна брати доміно доки не з'явиться підходящий хід
 
-Доміно автоматично розташовуються у вигляді спіралі
-Горизонтальні та вертикальні доміно чергуються
+Доміно розкладаються послідовно в прямокутнику
 Перемагає той, хто першим позбудеться всіх доміно
 
 Удачі в грі!`);
